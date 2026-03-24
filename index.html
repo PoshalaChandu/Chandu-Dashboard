@@ -69,9 +69,17 @@
     <div class="header">🚆 NMS Dashboard - Chandu</div>
 
     <div class="controls">
-        <select id="sheetSelect" onchange="displayData()"></select>
-        <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
-    </div>
+    <select id="fileSelect" onchange="loadExcel()">
+        <option value="data.xlsx">Main Data</option>
+        <option value="data2.xlsx">Second Data</option>
+    </select>
+
+    <!-- EXISTING -->
+    <select id="sheetSelect" onchange="displayData()"></select>
+
+    <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
+
+</div>
 
     <div class="chart-box">
         <canvas id="chart"></canvas>
@@ -105,7 +113,10 @@ function login() {
 }
 
 function loadExcel() {
-    fetch("./data.xlsx")
+
+    let fileName = document.getElementById("fileSelect").value;
+
+    fetch("./" + fileName)
     .then(res => res.arrayBuffer())
     .then(data => {
         workbook = XLSX.read(data, { type: "array" });
