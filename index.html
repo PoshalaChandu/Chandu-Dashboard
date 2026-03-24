@@ -137,7 +137,16 @@ function displayData() {
     let search = document.getElementById("search").value.toLowerCase();
 
     let sheet = workbook.Sheets[sheetName];
-    let data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    let value = cell;
+
+if (typeof cell === "number") {
+    let date = XLSX.SSF.parse_date_code(cell);
+    if (date) {
+        value = `${String(date.d).padStart(2,'0')}-${String(date.m).padStart(2,'0')}-${date.y}`;
+    }
+}
+
+row += `<td class="${cls}">${value || ""}</td>`;
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
@@ -171,7 +180,16 @@ function displayData() {
                     else if(val.includes("progress")) { cls="progress"; progress++; }
                 }
 
-                row += `<td class="${cls}">${cell || ""}</td>`;
+                let value = cell;
+
+if (typeof cell === "number") {
+    let date = XLSX.SSF.parse_date_code(cell);
+    if (date) {
+        value = `${String(date.d).padStart(2,'0')}-${String(date.m).padStart(2,'0')}-${date.y}`;
+    }
+}
+
+row += `<td class="${cls}">${value || ""}</td>`;
             });
 
             row += "</tr>";
