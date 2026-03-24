@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Excel Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        input, select {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        table, th, td {
+            border: 1px solid gray;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>📊 Excel Dashboard</h2>
+
+<input type="file" id="fileInput" accept=".xlsx,.xls">
+
+<select id="sheetSelect" onchange="displayData()">
+    <option value="">Select Sheet (Week)</option>
+</select>
+
+<table id="table">
+    <thead></thead>
+    <tbody></tbody>
+</table>
+
+<script>
+let workbook;
+
+document.getElementById("fileInput").addEventListener("change", function(e) {
+    let reader = new FileReader();
+
+    reader.onload = function(e) {
+        let data = new Uint8Array(e.target.result);
+        workbook = XLSX.read(data, { type: 'array' });
+
+        let sheetSelect = document.getElementById("sheetSelect");
+        sheetSelect.innerHTML = '<option value="">Select Sheet</option>';
+
+        workbook.SheetNames.forEach(name => {
+            sheetSelect.innerHTML += `<option value="${name}">${name}</option>`;
+        });
+    };
+
+    reader.readAsArrayBuffer(e.target.files[0]);
+});
+
+function displayData() {
+    let sheetName = document.getElementById("sheetSelect").value;
+    let sheet = workbook.Sheets[sheetName];
+
+    let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    let thead = document.querySelector("#table thead");
+    let tbody = document.querySelector("#table tbody");
+
+    thead.innerHTML = "";
+    tbody.innerHTML = "";
+
+    // Header
+    let headerRow = "<tr>";
+    jsonData[0].forEach(cell => {
+        headerRow += `<th>${cell}</th>`;
+    });
+    headerRow += "</tr>";
+    thead.innerHTML = headerRow;
+
+    // Data
+    for (let i = 1; i < jsonData.length; i++) {
+        let row = "<tr>";
+        jsonData[i].forEach(cell => {
+            row += `<td>${cell || ""}</td>`;
+        });
+        row += "</tr>";
+        tbody.innerHTML += row;
+    }
+}
+</script>
+
+</body>
+</html>
