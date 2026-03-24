@@ -133,20 +133,18 @@ function loadExcel() {
 }
 
 function displayData() {
+
     let sheetName = document.getElementById("sheetSelect").value;
     let search = document.getElementById("search").value.toLowerCase();
 
     let sheet = workbook.Sheets[sheetName];
-    let value = cell;
 
-if (typeof cell === "number") {
-    let date = XLSX.SSF.parse_date_code(cell);
-    if (date) {
-        value = `${String(date.d).padStart(2,'0')}-${String(date.m).padStart(2,'0')}-${date.y}`;
-    }
-}
-
-row += `<td class="${cls}">${value || ""}</td>`;
+    // ✅ FIX: Proper conversion
+    let data = XLSX.utils.sheet_to_json(sheet, { 
+        header: 1,
+        raw: false,
+        defval: ""
+    });
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
@@ -154,15 +152,17 @@ row += `<td class="${cls}">${value || ""}</td>`;
     thead.innerHTML = "";
     tbody.innerHTML = "";
 
-    let completed=0, pending=0, progress=0;
+    let completed = 0, pending = 0, progress = 0;
 
-    // Header
+    // ✅ Header
     let header = "<tr>";
     data[0].forEach(col => header += `<th>${col}</th>`);
     header += "</tr>";
     thead.innerHTML = header;
 
-    for (let i=1; i<data.length; i++) {
+    // ✅ Rows
+    for (let i = 1; i < data.length; i++) {
+
         let rowText = data[i].join(" ").toLowerCase();
 
         if (rowText.includes(search)) {
@@ -170,26 +170,32 @@ row += `<td class="${cls}">${value || ""}</td>`;
             let row = "<tr>";
 
             data[i].forEach(cell => {
-                let cls="";
 
-                if(cell){
-                    let val = cell.toString().toLowerCase();
-
-                    if(val.includes("complete")) { cls="completed"; completed++; }
-                    else if(val.includes("pending")) { cls="pending"; pending++; }
-                    else if(val.includes("progress")) { cls="progress"; progress++; }
-                }
-
+                let cls = "";
                 let value = cell;
 
-if (typeof cell === "number") {
-    let date = XLSX.SSF.parse_date_code(cell);
-    if (date) {
-        value = `${String(date.d).padStart(2,'0')}-${String(date.m).padStart(2,'0')}-${date.y}`;
-    }
-}
+                // ✅ Status colors
+                if (cell) {
+                    let val = cell.toString().toLowerCase();
 
-row += `<td class="${cls}">${value || ""}</td>`;
+                    if (val.includes("complete")) {
+                        cls = "completed"; completed++;
+                    } else if (val.includes("pending")) {
+                        cls = "pending"; pending++;
+                    } else if (val.includes("progress")) {
+                        cls = "progress"; progress++;
+                    }
+                }
+
+                // ✅ Date fix
+                if (typeof cell === "number") {
+                    let date = XLSX.SSF.parse_date_code(cell);
+                    if (date) {
+                        value = `${String(date.d).padStart(2,'0')}-${String(date.m).padStart(2,'0')}-${date.y}`;
+                    }
+                }
+
+                row += `<td class="${cls}">${value}</td>`;
             });
 
             row += "</tr>";
