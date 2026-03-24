@@ -1,79 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Excel Dashboard</title>
+    <title>NMS Dashboard</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         body {
             font-family: Arial;
-            background: #f4f6f9;
+            margin: 0;
+            background: #eef2f7;
+        }
+
+        /* LOGIN */
+        .login {
+            width: 300px;
+            margin: 120px auto;
             padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px gray;
+            border-radius: 10px;
         }
-        h2 {
-            text-align: center;
-        }
+
         input, select {
-            padding: 10px;
-            margin: 10px 0;
             width: 100%;
+            padding: 10px;
+            margin-top: 10px;
         }
+
+        button {
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        /* DASHBOARD */
+        .dashboard {
+            display: none;
+        }
+
+        .header {
+            background: #1f2d3d;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+        }
+
+        .controls {
+            padding: 10px;
+            background: white;
+            display: flex;
+            gap: 10px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
         }
-        table, th, td {
-            border: 1px solid gray;
+
+        th {
+            background: #007bff;
+            color: white;
         }
+
         th, td {
+            border: 1px solid #ccc;
             padding: 8px;
             text-align: center;
         }
+
+        .completed { background: #28a745; color: white; }
+        .pending { background: #dc3545; color: white; }
     </style>
 </head>
 
 <body>
 
-<h2>📊 Excel Dashboard</h2>
+<!-- LOGIN -->
+<div class="login" id="loginPage">
+    <h3>Login</h3>
+    <input type="text" id="user" placeholder="Username">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="login()">Login</button>
+</div>
 
-<input type="file" id="fileInput" accept=".xlsx,.xls">
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
 
-<select id="sheetSelect" onchange="displayData()">
-    <option value="">Select Sheet (Week)</option>
-</select>
+    <div class="header">
+        🚆 NMS Dashboard - Chandu
+    </div>
 
-<table id="table">
-    <thead></thead>
-    <tbody></tbody>
-</table>
+    <div class="controls">
+        <select id="sheetSelect" onchange="displayData()"></select>
+        <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
+    </div>
+
+    <table id="table">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+</div>
 
 <script>
+const USER = "admin";
+const PASS = "1234";
+
 let workbook;
 
-document.getElementById("fileInput").addEventListener("change", function(e) {
-    let reader = new FileReader();
+function login() {
+    let u = document.getElementById("user").value;
+    let p = document.getElementById("pass").value;
 
-    reader.onload = function(e) {
-        let data = new Uint8Array(e.target.result);
-        workbook = XLSX.read(data, { type: 'array' });
+    if (u === USER && p === PASS) {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        loadExcel();
+    } else {
+        alert("Invalid Login");
+    }
+}
 
-        let sheetSelect = document.getElementById("sheetSelect");
-        sheetSelect.innerHTML = '<option value="">Select Sheet</option>';
+// Load Excel Automatically
+function loadExcel() {
+    fetch("data.xlsx")
+        .then(res => res.arrayBuffer())
+        .then(data => {
+            workbook = XLSX.read(data, { type: "array" });
 
-        workbook.SheetNames.forEach(name => {
-            sheetSelect.innerHTML += `<option value="${name}">${name}</option>`;
+            let select = document.getElementById("sheetSelect");
+            select.innerHTML = "";
+
+            workbook.SheetNames.forEach(name => {
+                select.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+
+            displayData();
         });
-    };
+}
 
-    reader.readAsArrayBuffer(e.target.files[0]);
-});
-
+// Display Data
 function displayData() {
     let sheetName = document.getElementById("sheetSelect").value;
-    let sheet = workbook.Sheets[sheetName];
+    let search = document.getElementById("search").value.toLowerCase();
 
-    let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    let sheet = workbook.Sheets[sheetName];
+    let data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
@@ -82,21 +159,33 @@ function displayData() {
     tbody.innerHTML = "";
 
     // Header
-    let headerRow = "<tr>";
-    jsonData[0].forEach(cell => {
-        headerRow += `<th>${cell}</th>`;
-    });
-    headerRow += "</tr>";
-    thead.innerHTML = headerRow;
+    let header = "<tr>";
+    data[0].forEach(col => header += `<th>${col}</th>`);
+    header += "</tr>";
+    thead.innerHTML = header;
 
-    // Data
-    for (let i = 1; i < jsonData.length; i++) {
-        let row = "<tr>";
-        jsonData[i].forEach(cell => {
-            row += `<td>${cell || ""}</td>`;
-        });
-        row += "</tr>";
-        tbody.innerHTML += row;
+    // Rows
+    for (let i = 1; i < data.length; i++) {
+        let rowData = data[i].join(" ").toLowerCase();
+
+        if (rowData.includes(search)) {
+            let row = "<tr>";
+
+            data[i].forEach(cell => {
+                let cls = "";
+
+                if (cell && cell.toString().toLowerCase().includes("complete")) {
+                    cls = "completed";
+                } else if (cell && cell.toString().toLowerCase().includes("pending")) {
+                    cls = "pending";
+                }
+
+                row += `<td class="${cls}">${cell || ""}</td>`;
+            });
+
+            row += "</tr>";
+            tbody.innerHTML += row;
+        }
     }
 }
 </script>
