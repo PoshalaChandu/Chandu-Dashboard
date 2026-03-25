@@ -110,12 +110,11 @@ function login() {
 
 function loadExcel() {
 
-    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7xR3uQ2faUbtanguj-GjtDwJIgSO9zmf_8eU7eY7r4ML5m3BIyXHTvJZYTIG9XanMKiE9Twy2hcpf/pubhtml") // your CSV link
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vToZkt4TLecGUPPln7p7JEOF8uCNWVm9biS6i78G_6W7e_awaJZQYkwlzdLbppqNx-n1ib7egrAgh4U/pubhtml")
     .then(res => res.arrayBuffer())
     .then(data => {
 
-        // ✅ Use XLSX to read CSV properly
-        workbook = XLSX.read(data, { type: "array" });
+        workbook = XLSX.read(data, { type: "array", WTF: true });
 
         let select = document.getElementById("sheetSelect");
         select.innerHTML = "";
@@ -127,7 +126,7 @@ function loadExcel() {
         displayData();
     })
     .catch(err => {
-        console.error(err);
+        console.error("ERROR:", err);
         alert("Error loading Google Sheet");
     });
 }
@@ -137,7 +136,12 @@ function displayData() {
     let sheetName = document.getElementById("sheetSelect").value;
     let search = document.getElementById("search").value.toLowerCase();
 
-   let data = workbook.Sheets[sheetName];
+   let sheet = workbook.Sheets[sheetName];
+
+let data = XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    defval: ""
+});
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
