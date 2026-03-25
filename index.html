@@ -69,13 +69,9 @@
     <div class="header">🚆 NMS Dashboard - Chandu</div>
 
     <div class="controls">
-  
-    <!-- EXISTING -->
-    <select id="sheetSelect" onchange="displayData()"></select>
-
-    <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
-
-</div>
+        <select id="sheetSelect" onchange="displayData()"></select>
+        <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
+    </div>
 
     <div class="chart-box">
         <canvas id="chart"></canvas>
@@ -108,13 +104,14 @@ function login() {
     }
 }
 
+// ✅ LOAD LOCAL EXCEL
 function loadExcel() {
 
-    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vToZkt4TLecGUPPln7p7JEOF8uCNWVm9biS6i78G_6W7e_awaJZQYkwlzdLbppqNx-n1ib7egrAgh4U/pubhtml")
+    fetch("data.xlsx")   // 🔥 your file name
     .then(res => res.arrayBuffer())
     .then(data => {
 
-        workbook = XLSX.read(data, { type: "array", WTF: true });
+        workbook = XLSX.read(data, { type: "array" });
 
         let select = document.getElementById("sheetSelect");
         select.innerHTML = "";
@@ -126,22 +123,23 @@ function loadExcel() {
         displayData();
     })
     .catch(err => {
-        console.error("ERROR:", err);
-        alert("Error loading Google Sheet");
+        console.error(err);
+        alert("Error loading Excel file");
     });
 }
 
+// ✅ DISPLAY DATA
 function displayData() {
 
     let sheetName = document.getElementById("sheetSelect").value;
     let search = document.getElementById("search").value.toLowerCase();
 
-   let sheet = workbook.Sheets[sheetName];
+    let sheet = workbook.Sheets[sheetName];
 
-let data = XLSX.utils.sheet_to_json(sheet, {
-    header: 1,
-    defval: ""
-});
+    let data = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: ""
+    });
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
@@ -151,13 +149,13 @@ let data = XLSX.utils.sheet_to_json(sheet, {
 
     let completed = 0, pending = 0, progress = 0;
 
-    // ✅ Header
+    // Header
     let header = "<tr>";
     data[0].forEach(col => header += `<th>${col}</th>`);
     header += "</tr>";
     thead.innerHTML = header;
 
-    // ✅ Rows
+    // Rows
     for (let i = 1; i < data.length; i++) {
 
         let rowText = data[i].join(" ").toLowerCase();
@@ -171,7 +169,6 @@ let data = XLSX.utils.sheet_to_json(sheet, {
                 let cls = "";
                 let value = cell;
 
-                // ✅ Status colors
                 if (cell) {
                     let val = cell.toString().toLowerCase();
 
@@ -181,14 +178,6 @@ let data = XLSX.utils.sheet_to_json(sheet, {
                         cls = "pending"; pending++;
                     } else if (val.includes("progress")) {
                         cls = "progress"; progress++;
-                    }
-                }
-
-                // ✅ Date fix
-                if (typeof cell === "number") {
-                    let date = XLSX.SSF.parse_date_code(cell);
-                    if (date) {
-                        value = `${String(date.d).padStart(2,'0')}-${String(date.m).padStart(2,'0')}-${date.y}`;
                     }
                 }
 
@@ -203,6 +192,7 @@ let data = XLSX.utils.sheet_to_json(sheet, {
     drawChart(completed, pending, progress);
 }
 
+// ✅ CHART
 function drawChart(c, p, pr) {
 
     if(chart) chart.destroy();
@@ -223,5 +213,3 @@ function drawChart(c, p, pr) {
 
 </body>
 </html>
-
-
