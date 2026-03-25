@@ -83,7 +83,7 @@
     <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
 
 </div>
-
+<div id="summary" style="display:flex; gap:15px; padding:10px;"></div>
     <div class="chart-box">
         <canvas id="chart"></canvas>
     </div>
@@ -99,7 +99,7 @@
 const USER = "chandu";
 const PASS = "464946";
 
-let tableData = [];
+let allFilesData = [];
 let chart;
 
 function login() {
@@ -120,17 +120,13 @@ function loadMultipleExcel() {
 
     let files = document.getElementById("fileInput").files;
 
-    if (files.length === 0) {
-        alert("Please select Excel files");
-        return;
-    }
-
-    tableData = [];
+    allFilesData = [];
     let loaded = 0;
 
     for (let i = 0; i < files.length; i++) {
 
         let reader = new FileReader();
+        let fileName = files[i].name;
 
         reader.onload = function(e) {
 
@@ -146,17 +142,16 @@ function loadMultipleExcel() {
                     defval: ""
                 });
 
-                if (tableData.length === 0) {
-                    tableData = json;
-                } else {
-                    tableData = tableData.concat(json.slice(1)); // skip header
-                }
+                allFilesData.push({
+                    name: fileName + " - " + sheetName,
+                    data: json
+                });
             });
 
             loaded++;
 
             if (loaded === files.length) {
-                displayData();
+                displayAllFiles();  // 🔥 IMPORTANT
             }
         };
 
@@ -164,64 +159,6 @@ function loadMultipleExcel() {
     }
 }
 
-// ✅ DISPLAY DATA
-function displayData() {
-
-    let sheetName = document.getElementById("sheetSelect").value;
-    let search = document.getElementById("search").value.toLowerCase();
-
-   let data = tableData;
-
-    let thead = document.querySelector("#table thead");
-    let tbody = document.querySelector("#table tbody");
-
-    thead.innerHTML = "";
-    tbody.innerHTML = "";
-
-    let completed = 0, pending = 0, progress = 0;
-
-    // Header
-    let header = "<tr>";
-    data[0].forEach(col => header += `<th>${col}</th>`);
-    header += "</tr>";
-    thead.innerHTML = header;
-
-    // Rows
-    for (let i = 1; i < data.length; i++) {
-
-        let rowText = data[i].join(" ").toLowerCase();
-
-        if (rowText.includes(search)) {
-
-            let row = "<tr>";
-
-            data[i].forEach(cell => {
-
-                let cls = "";
-                let value = cell;
-
-                if (cell) {
-                    let val = cell.toString().toLowerCase();
-
-                    if (val.includes("complete")) {
-                        cls = "completed"; completed++;
-                    } else if (val.includes("pending")) {
-                        cls = "pending"; pending++;
-                    } else if (val.includes("progress")) {
-                        cls = "progress"; progress++;
-                    }
-                }
-
-                row += `<td class="${cls}">${value}</td>`;
-            });
-
-            row += "</tr>";
-            tbody.innerHTML += row;
-        }
-    }
-
-    drawChart(completed, pending, progress);
-}
 
 // ✅ CHART
 function drawChart(c, p, pr) {
@@ -239,6 +176,78 @@ function drawChart(c, p, pr) {
             }]
         }
     });
+}
+    function displayAllFiles() {
+
+    let container = document.getElementById("table").parentElement;
+    container.innerHTML = "";
+
+    allFilesData.forEach(file => {
+
+        let title = `<h3 style="padding:10px;background:#1f2d3d;color:white;">
+                        ${file.name}
+                     </h3>`;
+
+        let tableHTML = `<table><thead></thead><tbody></tbody></table>`;
+
+        container.innerHTML += title + tableHTML;
+
+        renderTable(file.data);
+    });
+}
+
+function renderTable(data) {
+
+    let tables = document.querySelectorAll("table");
+    let table = tables[tables.length - 1];
+
+    let thead = table.querySelector("thead");
+    let tbody = table.querySelector("tbody");
+
+    let completed=0, pending=0, progress=0;
+
+    let header = "<tr>";
+    data[0].forEach(col => header += `<th>${col}</th>`);
+    header += "</tr>";
+    thead.innerHTML = header;
+
+    for (let i=1; i<data.length; i++) {
+
+        let row = "<tr>";
+
+        data[i].forEach(cell => {
+
+            let cls="";
+            let value = cell || "";
+
+            if(value){
+                let val = value.toString().toLowerCase();
+
+                if(val.includes("complete")) { cls="completed"; completed++; }
+                else if(val.includes("pending")) { cls="pending"; pending++; }
+                else if(val.includes("progress")) { cls="progress"; progress++; }
+            }
+
+            row += `<td class="${cls}">${value}</td>`;
+        });
+
+        row += "</tr>";
+        tbody.innerHTML += row;
+    }
+
+    updateSummary(completed, pending, progress, data.length-1);
+}
+
+function updateSummary(c, p, pr, total) {
+
+    let summary = document.getElementById("summary");
+
+    summary.innerHTML = `
+        <div style="background:#007bff;color:white;padding:10px;">Total: ${total}</div>
+        <div style="background:#28a745;color:white;padding:10px;">Completed: ${c}</div>
+        <div style="background:#dc3545;color:white;padding:10px;">Pending: ${p}</div>
+        <div style="background:#ffc107;padding:10px;">Progress: ${pr}</div>
+    `;
 }
 </script>
 
