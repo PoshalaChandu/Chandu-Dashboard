@@ -99,7 +99,7 @@
 const USER = "chandu";
 const PASS = "464946";
 
-let workbook;
+let tableData = [];
 let chart;
 
 function login() {
@@ -125,13 +125,10 @@ function loadMultipleExcel() {
         return;
     }
 
-    workbook = null;
-    let allData = [];
-
-    let fileCount = files.length;
+    tableData = [];
     let loaded = 0;
 
-    for (let i = 0; i < fileCount; i++) {
+    for (let i = 0; i < files.length; i++) {
 
         let reader = new FileReader();
 
@@ -149,27 +146,16 @@ function loadMultipleExcel() {
                     defval: ""
                 });
 
-                // Merge all files data
-                if (allData.length === 0) {
-                    allData = json;
+                if (tableData.length === 0) {
+                    tableData = json;
                 } else {
-                    allData = allData.concat(json.slice(1)); // skip header
+                    tableData = tableData.concat(json.slice(1)); // skip header
                 }
             });
 
             loaded++;
 
-            // When all files loaded
-            if (loaded === fileCount) {
-
-                workbook = {
-                    Sheets: { Sheet1: allData },
-                    SheetNames: ["Combined Data"]
-                };
-
-                let select = document.getElementById("sheetSelect");
-                select.innerHTML = `<option value="Sheet1">Combined Data</option>`;
-
+            if (loaded === files.length) {
                 displayData();
             }
         };
@@ -184,12 +170,7 @@ function displayData() {
     let sheetName = document.getElementById("sheetSelect").value;
     let search = document.getElementById("search").value.toLowerCase();
 
-    let sheet = workbook.Sheets[sheetName];
-
-    let data = XLSX.utils.sheet_to_json(sheet, {
-        header: 1,
-        defval: ""
-    });
+   let data = tableData;
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
