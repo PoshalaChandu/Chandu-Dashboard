@@ -110,28 +110,25 @@ function login() {
 
 function loadExcel() {
 
-    fetch("PASTE-YOUR-GOOGLE-SHEET-LINK-HERE") // 🔥 replace link
-    .then(res => res.text())
-    .then(csv => {
+    fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7xR3uQ2faUbtanguj-GjtDwJIgSO9zmf_8eU7eY7r4ML5m3BIyXHTvJZYTIG9XanMKiE9Twy2hcpf/pubhtml") // your CSV link
+    .then(res => res.arrayBuffer())
+    .then(data => {
 
-        let rows = csv
-            .trim()
-            .split("\n")
-            .map(row => row.split(",").map(cell => cell.trim()));
-
-        workbook = {
-            Sheets: { Sheet1: rows },
-            SheetNames: ["Sheet1"]
-        };
+        // ✅ Use XLSX to read CSV properly
+        workbook = XLSX.read(data, { type: "array" });
 
         let select = document.getElementById("sheetSelect");
-        select.innerHTML = `<option value="Sheet1">Live Data</option>`;
+        select.innerHTML = "";
+
+        workbook.SheetNames.forEach(name => {
+            select.innerHTML += `<option value="${name}">${name}</option>`;
+        });
 
         displayData();
     })
     .catch(err => {
-        alert("Error loading Google Sheet");
         console.error(err);
+        alert("Error loading Google Sheet");
     });
 }
 
