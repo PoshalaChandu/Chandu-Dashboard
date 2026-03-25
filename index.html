@@ -110,12 +110,12 @@ let chart;
 let uploadedFiles=[];
 
 function login(){
-let u=user.value;
-let p=pass.value;
+let u=document.getElementById("user").value;
+let p=document.getElementById("pass").value;
 
 if(u===USER && p===PASS){
-loginPage.style.display="none";
-dashboard.style.display="block";
+document.getElementById("loginPage").style.display="none";
+document.getElementById("dashboard").style.display="block";
 }
 else alert("Invalid Login");
 }
@@ -123,7 +123,7 @@ else alert("Invalid Login");
 // LOAD EXCEL
 function loadMultipleExcel(){
 
-let files=fileInput.files;
+let files=document.getElementById("fileInput").files;
 
 tableData=[];
 uploadedFiles=[];
@@ -147,10 +147,12 @@ let sheet=wb.Sheets[name];
 
 let json=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
 
+if(json.length>0){
 if(tableData.length===0){
 tableData=json;
 }else{
 tableData=tableData.concat(json.slice(1));
+}
 }
 
 });
@@ -160,20 +162,23 @@ loaded++;
 if(loaded===files.length){
 setupColumnFilter();
 displayData();
+
+// show file names
+document.getElementById("fileNames").innerHTML =
+"Files: " + uploadedFiles.join(", ");
 }
 };
 
 reader.readAsArrayBuffer(files[i]);
 }
-
-// SHOW FILE NAMES
-fileNames.innerHTML="Files: "+uploadedFiles.join(", ");
 }
 
 // COLUMN FILTER
 function setupColumnFilter(){
-let select=columnFilter;
+let select=document.getElementById("columnFilter");
 select.innerHTML="";
+
+if(!tableData[0]) return;
 
 tableData[0].forEach((col,i)=>{
 select.innerHTML+=`<option value="${i}">${col}</option>`;
@@ -183,18 +188,25 @@ select.innerHTML+=`<option value="${i}">${col}</option>`;
 // DISPLAY DATA
 function displayData(){
 
-let search=search.value.toLowerCase();
-let colIndex=columnFilter.value;
-let fromDate=fromDateInput();
-let toDate=toDateInput();
+if (!tableData || tableData.length === 0) {
+console.log("No data loaded");
+return;
+}
+
+let searchText=document.getElementById("search").value.toLowerCase();
+let colIndex=parseInt(document.getElementById("columnFilter").value || 0);
+
+let fromDateVal=document.getElementById("fromDate").value;
+let toDateVal=document.getElementById("toDate").value;
+
+let fromDate=fromDateVal?new Date(fromDateVal):null;
+let toDate=toDateVal?new Date(toDateVal):null;
 
 let thead=document.querySelector("#table thead");
 let tbody=document.querySelector("#table tbody");
 
 thead.innerHTML="";
 tbody.innerHTML="";
-
-if(!tableData.length)return;
 
 let completed=0,pending=0,progress=0;
 
@@ -208,8 +220,6 @@ thead.innerHTML=header;
 for(let i=1;i<tableData.length;i++){
 
 let rowData=tableData[i];
-let cellValue=rowData[colIndex] || "";
-
 let rowText=rowData.join(" ").toLowerCase();
 
 // DATE FILTER
@@ -223,7 +233,7 @@ if(toDate && d>toDate) passDate=false;
 }
 });
 
-if(rowText.includes(search) && passDate){
+if(rowText.includes(searchText) && passDate){
 
 let row="<tr>";
 
@@ -249,7 +259,7 @@ tbody.innerHTML+=row;
 }
 
 // SUMMARY
-summary.innerHTML=`
+document.getElementById("summary").innerHTML=`
 <div style="background:#007bff;color:white;padding:10px;">Total: ${completed+pending+progress}</div>
 <div style="background:#28a745;color:white;padding:10px;">Completed: ${completed}</div>
 <div style="background:#dc3545;color:white;padding:10px;">Pending: ${pending}</div>
@@ -259,33 +269,20 @@ summary.innerHTML=`
 drawChart(completed,pending,progress);
 }
 
-// DATE HELPERS
-function fromDateInput(){
-let val=document.getElementById("fromDate").value;
-return val?new Date(val):null;
-}
-
-function toDateInput(){
-let val=document.getElementById("toDate").value;
-return val?new Date(val):null;
-}
-
 // CHART
 function drawChart(c,p,pr){
 
 if(chart) chart.destroy();
 
-chart=new Chart(chartBox(),{
+let ctx=document.getElementById("chart");
+
+chart=new Chart(ctx,{
 type:'pie',
 data:{
 labels:["Completed","Pending","In Progress"],
 datasets:[{data:[c,p,pr]}]
 }
 });
-}
-
-function chartBox(){
-return document.getElementById("chart");
 }
 
 // AUTO REFRESH
