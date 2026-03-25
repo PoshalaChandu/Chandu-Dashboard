@@ -114,22 +114,25 @@ function login() {
 
 function loadExcel() {
 
-    let fileName = document.getElementById("fileSelect").value;
+fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7xR3uQ2faUbtanguj-GjtDwJIgSO9zmf_8eU7eY7r4ML5m3BIyXHTvJZYTIG9XanMKiE9Twy2hcpf/pub?output=csv")
+.then(res => res.text())
+.then(data => {
 
-    fetch("./" + fileName)
-    .then(res => res.arrayBuffer())
-    .then(data => {
-        workbook = XLSX.read(data, { type: "array" });
+    let rows = data.split("\n").map(row => row.split(","));
 
-        let select = document.getElementById("sheetSelect");
-        select.innerHTML = "";
+    let table = document.getElementById("table");
+    table.innerHTML = "";
 
-        workbook.SheetNames.forEach(name => {
-            select.innerHTML += `<option value="${name}">${name}</option>`;
+    rows.forEach(row => {
+        let tr = "<tr>";
+        row.forEach(cell => {
+            tr += `<td>${cell}</td>`;
         });
-
-        displayData();
+        tr += "</tr>";
+        table.innerHTML += tr;
     });
+
+});
 }
 
 function displayData() {
