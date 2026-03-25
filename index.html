@@ -69,11 +69,7 @@
     <div class="header">🚆 NMS Dashboard - Chandu</div>
 
     <div class="controls">
-    <select id="fileSelect" onchange="loadExcel()">
-        <option value="data.xlsx">Main Data</option>
-        <option value="data2.xlsx">Second Data</option>
-    </select>
-
+  
     <!-- EXISTING -->
     <select id="sheetSelect" onchange="displayData()"></select>
 
@@ -114,24 +110,28 @@ function login() {
 
 function loadExcel() {
 
-    fetch("PASTE-YOUR-GOOGLE-SHEET-LINK-HERE")
+    fetch("PASTE-YOUR-GOOGLE-SHEET-LINK-HERE") // 🔥 replace link
     .then(res => res.text())
     .then(csv => {
 
-        // Convert CSV → Array
-        let rows = csv.split("\n").map(row => row.split(","));
+        let rows = csv
+            .trim()
+            .split("\n")
+            .map(row => row.split(",").map(cell => cell.trim()));
 
-        // Store like Excel format
         workbook = {
             Sheets: { Sheet1: rows },
             SheetNames: ["Sheet1"]
         };
 
-        // Update dropdown (only one sheet)
         let select = document.getElementById("sheetSelect");
         select.innerHTML = `<option value="Sheet1">Live Data</option>`;
 
         displayData();
+    })
+    .catch(err => {
+        alert("Error loading Google Sheet");
+        console.error(err);
     });
 }
 
