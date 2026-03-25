@@ -114,25 +114,25 @@ function login() {
 
 function loadExcel() {
 
-fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7xR3uQ2faUbtanguj-GjtDwJIgSO9zmf_8eU7eY7r4ML5m3BIyXHTvJZYTIG9XanMKiE9Twy2hcpf/pub?output=csv")
-.then(res => res.text())
-.then(data => {
+    fetch("PASTE-YOUR-GOOGLE-SHEET-LINK-HERE")
+    .then(res => res.text())
+    .then(csv => {
 
-    let rows = data.split("\n").map(row => row.split(","));
+        // Convert CSV → Array
+        let rows = csv.split("\n").map(row => row.split(","));
 
-    let table = document.getElementById("table");
-    table.innerHTML = "";
+        // Store like Excel format
+        workbook = {
+            Sheets: { Sheet1: rows },
+            SheetNames: ["Sheet1"]
+        };
 
-    rows.forEach(row => {
-        let tr = "<tr>";
-        row.forEach(cell => {
-            tr += `<td>${cell}</td>`;
-        });
-        tr += "</tr>";
-        table.innerHTML += tr;
+        // Update dropdown (only one sheet)
+        let select = document.getElementById("sheetSelect");
+        select.innerHTML = `<option value="Sheet1">Live Data</option>`;
+
+        displayData();
     });
-
-});
 }
 
 function displayData() {
@@ -140,14 +140,7 @@ function displayData() {
     let sheetName = document.getElementById("sheetSelect").value;
     let search = document.getElementById("search").value.toLowerCase();
 
-    let sheet = workbook.Sheets[sheetName];
-
-    // ✅ FIX: Proper conversion
-    let data = XLSX.utils.sheet_to_json(sheet, { 
-        header: 1,
-        raw: false,
-        defval: ""
-    });
+   let data = workbook.Sheets[sheetName];
 
     let thead = document.querySelector("#table thead");
     let tbody = document.querySelector("#table tbody");
