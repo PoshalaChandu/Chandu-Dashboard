@@ -31,6 +31,7 @@
         }
 
         .controls {
+            <input type="file" id="fileInput" multiple accept=".xlsx" onchange="loadMultipleExcel()">
             display:flex; gap:10px;
             padding:10px; background:white;
         }
@@ -98,34 +99,73 @@ function login() {
     if (u === USER && p === PASS) {
         document.getElementById("loginPage").style.display = "none";
         document.getElementById("dashboard").style.display = "block";
-        loadExcel();
+        alert("Please upload Excel files");
     } else {
         alert("Invalid Login");
     }
 }
 
 // ✅ LOAD LOCAL EXCEL
-function loadExcel() {
+function loadMultipleExcel() {
 
-    fetch("data.xlsx")   // 🔥 your file name
-    .then(res => res.arrayBuffer())
-    .then(data => {
+    let files = document.getElementById("fileInput").files;
 
-        workbook = XLSX.read(data, { type: "array" });
+    if (files.length === 0) {
+        alert("Please select Excel files");
+        return;
+    }
 
-        let select = document.getElementById("sheetSelect");
-        select.innerHTML = "";
+    workbook = null;
+    let allData = [];
 
-        workbook.SheetNames.forEach(name => {
-            select.innerHTML += `<option value="${name}">${name}</option>`;
-        });
+    let fileCount = files.length;
+    let loaded = 0;
 
-        displayData();
-    })
-    .catch(err => {
-        console.error(err);
-        alert("Error loading Excel file");
-    });
+    for (let i = 0; i < fileCount; i++) {
+
+        let reader = new FileReader();
+
+        reader.onload = function(e) {
+
+            let data = new Uint8Array(e.target.result);
+            let wb = XLSX.read(data, { type: "array" });
+
+            wb.SheetNames.forEach(sheetName => {
+
+                let sheet = wb.Sheets[sheetName];
+
+                let json = XLSX.utils.sheet_to_json(sheet, {
+                    header: 1,
+                    defval: ""
+                });
+
+                // Merge all files data
+                if (allData.length === 0) {
+                    allData = json;
+                } else {
+                    allData = allData.concat(json.slice(1)); // skip header
+                }
+            });
+
+            loaded++;
+
+            // When all files loaded
+            if (loaded === fileCount) {
+
+                workbook = {
+                    Sheets: { Sheet1: allData },
+                    SheetNames: ["Combined Data"]
+                };
+
+                let select = document.getElementById("sheetSelect");
+                select.innerHTML = `<option value="Sheet1">Combined Data</option>`;
+
+                displayData();
+            }
+        };
+
+        reader.readAsArrayBuffer(files[i]);
+    }
 }
 
 // ✅ DISPLAY DATA
