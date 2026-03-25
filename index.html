@@ -1,254 +1,298 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NMS Dashboard</title>
+<title>NMS Dashboard</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-        body { margin:0; font-family: Arial; background:#eef2f7; }
+<style>
+body { margin:0; font-family: Arial; background:#eef2f7; }
 
-        .login {
-            width:300px; margin:120px auto; padding:20px;
-            background:white; box-shadow:0 0 10px gray;
-        }
+.login {
+    width:300px; margin:120px auto; padding:20px;
+    background:white; box-shadow:0 0 10px gray;
+}
 
-        input, select {
-            padding:10px; width:100%; margin-top:10px;
-        }
+input, select { padding:8px; margin:5px; }
 
-        button {
-            padding:10px; width:100%; margin-top:10px;
-            background:#007bff; color:white; border:none;
-        }
+button {
+    padding:10px; width:100%; margin-top:10px;
+    background:#007bff; color:white; border:none;
+}
 
-        .dashboard { display:none; }
+.dashboard { display:none; }
 
-        .header {
-            background:#1f2d3d; color:white;
-            padding:15px; font-size:18px;
-        }
+.header {
+    background:#1f2d3d; color:white;
+    padding:15px; font-size:18px;
+}
 
-        .controls {
-            <input type="file" id="fileInput" multiple accept=".xlsx" onchange="loadMultipleExcel()">
-            display:flex; gap:10px;
-            padding:10px; background:white;
-        }
+.controls {
+    display:flex; flex-wrap:wrap; gap:10px;
+    padding:10px; background:white;
+}
 
-        table {
-            width:100%; border-collapse:collapse;
-            background:white;
-        }
+table {
+    width:100%; border-collapse:collapse;
+    background:white;
+}
 
-        th { background:#007bff; color:white; }
-        th, td { padding:8px; border:1px solid #ccc; text-align:center; }
+th { background:#1f2d3d; color:white; }
+th, td { padding:8px; border:1px solid #ccc; text-align:center; }
 
-        .completed { background:#28a745; color:white; }
-        .pending { background:#dc3545; color:white; }
-        .progress { background:#ffc107; }
+.completed { background:#28a745; color:white; }
+.pending { background:#dc3545; color:white; }
+.progress { background:#ffc107; }
 
-        .chart-box {
-            width:300px; margin:20px auto;
-        }
-    </style>
+.chart-box { width:300px; margin:20px auto; }
+
+#summary div {
+    min-width:120px;
+    text-align:center;
+    font-weight:bold;
+    border-radius:5px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div class="login" id="loginPage">
-    <h3>Login</h3>
-    <input type="text" id="user" placeholder="Username">
-    <input type="password" id="pass" placeholder="Password">
-    <button onclick="login()">Login</button>
+<h3>Login</h3>
+<input type="text" id="user" placeholder="Username">
+<input type="password" id="pass" placeholder="Password">
+<button onclick="login()">Login</button>
 </div>
 
-<!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
 
-    <div class="header">🚆 NMS Dashboard - Chandu</div>
+<div class="header">🚆 NMS Dashboard - Chandu</div>
 
-    <div class="controls">
+<div class="controls">
 
-    <!-- ✅ VISIBLE BUTTON -->
-    <label style="background:#007bff;color:white;padding:8px 12px;border-radius:5px;cursor:pointer;">
-        Upload Excel
-        <input type="file" id="fileInput" multiple accept=".xlsx"
-               onchange="loadMultipleExcel()" style="display:none;">
-    </label>
+<label style="background:#007bff;color:white;padding:8px 12px;border-radius:5px;cursor:pointer;">
+Upload Excel
+<input type="file" id="fileInput" multiple accept=".xlsx"
+onchange="loadMultipleExcel()" style="display:none;">
+</label>
 
-    <select id="sheetSelect" onchange="displayData()"></select>
+<input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
 
-    <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
+<select id="columnFilter" onchange="displayData()"></select>
+
+<input type="date" id="fromDate" onchange="displayData()">
+<input type="date" id="toDate" onchange="displayData()">
 
 </div>
-<div id="summary" style="display:flex; gap:15px; padding:10px;"></div>
-    <div class="chart-box">
-        <canvas id="chart"></canvas>
-    </div>
 
-    <table id="table">
-        <thead></thead>
-        <tbody></tbody>
-    </table>
+<div id="fileNames" style="padding:10px;"></div>
+
+<div id="summary" style="display:flex; gap:15px; padding:10px;"></div>
+
+<div class="chart-box">
+<canvas id="chart"></canvas>
+</div>
+
+<table id="table">
+<thead></thead>
+<tbody></tbody>
+</table>
 
 </div>
 
 <script>
-const USER = "chandu";
-const PASS = "464946";
+const USER="chandu";
+const PASS="464946";
 
-let allFilesData = [];
+let tableData=[];
 let chart;
+let uploadedFiles=[];
 
-function login() {
-    let u = document.getElementById("user").value;
-    let p = document.getElementById("pass").value;
+function login(){
+let u=user.value;
+let p=pass.value;
 
-    if (u === USER && p === PASS) {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-        alert("Please upload Excel files");
-    } else {
-        alert("Invalid Login");
-    }
+if(u===USER && p===PASS){
+loginPage.style.display="none";
+dashboard.style.display="block";
+}
+else alert("Invalid Login");
 }
 
-// ✅ LOAD LOCAL EXCEL
-function loadMultipleExcel() {
+// LOAD EXCEL
+function loadMultipleExcel(){
 
-    let files = document.getElementById("fileInput").files;
+let files=fileInput.files;
 
-    allFilesData = [];
-    let loaded = 0;
+tableData=[];
+uploadedFiles=[];
 
-    for (let i = 0; i < files.length; i++) {
+let loaded=0;
 
-        let reader = new FileReader();
-        let fileName = files[i].name;
+for(let i=0;i<files.length;i++){
 
-        reader.onload = function(e) {
+uploadedFiles.push(files[i].name);
 
-            let data = new Uint8Array(e.target.result);
-            let wb = XLSX.read(data, { type: "array" });
+let reader=new FileReader();
 
-            wb.SheetNames.forEach(sheetName => {
+reader.onload=function(e){
 
-                let sheet = wb.Sheets[sheetName];
+let data=new Uint8Array(e.target.result);
+let wb=XLSX.read(data,{type:"array"});
 
-                let json = XLSX.utils.sheet_to_json(sheet, {
-                    header: 1,
-                    defval: ""
-                });
+wb.SheetNames.forEach(name=>{
 
-                allFilesData.push({
-                    name: fileName + " - " + sheetName,
-                    data: json
-                });
-            });
+let sheet=wb.Sheets[name];
 
-            loaded++;
+let json=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
 
-            if (loaded === files.length) {
-                displayAllFiles();  // 🔥 IMPORTANT
-            }
-        };
-
-        reader.readAsArrayBuffer(files[i]);
-    }
+if(tableData.length===0){
+tableData=json;
+}else{
+tableData=tableData.concat(json.slice(1));
 }
 
+});
 
-// ✅ CHART
-function drawChart(c, p, pr) {
+loaded++;
 
-    if(chart) chart.destroy();
-
-    let ctx = document.getElementById("chart");
-
-    chart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ["Completed", "Pending", "In Progress"],
-            datasets: [{
-                data: [c, p, pr]
-            }]
-        }
-    });
+if(loaded===files.length){
+setupColumnFilter();
+displayData();
 }
-    function displayAllFiles() {
+};
 
-    let container = document.getElementById("table").parentElement;
-    container.innerHTML = "";
-
-    allFilesData.forEach(file => {
-
-        let title = `<h3 style="padding:10px;background:#1f2d3d;color:white;">
-                        ${file.name}
-                     </h3>`;
-
-        let tableHTML = `<table><thead></thead><tbody></tbody></table>`;
-
-        container.innerHTML += title + tableHTML;
-
-        renderTable(file.data);
-    });
+reader.readAsArrayBuffer(files[i]);
 }
 
-function renderTable(data) {
-
-    let tables = document.querySelectorAll("table");
-    let table = tables[tables.length - 1];
-
-    let thead = table.querySelector("thead");
-    let tbody = table.querySelector("tbody");
-
-    let completed=0, pending=0, progress=0;
-
-    let header = "<tr>";
-    data[0].forEach(col => header += `<th>${col}</th>`);
-    header += "</tr>";
-    thead.innerHTML = header;
-
-    for (let i=1; i<data.length; i++) {
-
-        let row = "<tr>";
-
-        data[i].forEach(cell => {
-
-            let cls="";
-            let value = cell || "";
-
-            if(value){
-                let val = value.toString().toLowerCase();
-
-                if(val.includes("complete")) { cls="completed"; completed++; }
-                else if(val.includes("pending")) { cls="pending"; pending++; }
-                else if(val.includes("progress")) { cls="progress"; progress++; }
-            }
-
-            row += `<td class="${cls}">${value}</td>`;
-        });
-
-        row += "</tr>";
-        tbody.innerHTML += row;
-    }
-
-    updateSummary(completed, pending, progress, data.length-1);
+// SHOW FILE NAMES
+fileNames.innerHTML="Files: "+uploadedFiles.join(", ");
 }
 
-function updateSummary(c, p, pr, total) {
+// COLUMN FILTER
+function setupColumnFilter(){
+let select=columnFilter;
+select.innerHTML="";
 
-    let summary = document.getElementById("summary");
-
-    summary.innerHTML = `
-        <div style="background:#007bff;color:white;padding:10px;">Total: ${total}</div>
-        <div style="background:#28a745;color:white;padding:10px;">Completed: ${c}</div>
-        <div style="background:#dc3545;color:white;padding:10px;">Pending: ${p}</div>
-        <div style="background:#ffc107;padding:10px;">Progress: ${pr}</div>
-    `;
+tableData[0].forEach((col,i)=>{
+select.innerHTML+=`<option value="${i}">${col}</option>`;
+});
 }
+
+// DISPLAY DATA
+function displayData(){
+
+let search=search.value.toLowerCase();
+let colIndex=columnFilter.value;
+let fromDate=fromDateInput();
+let toDate=toDateInput();
+
+let thead=document.querySelector("#table thead");
+let tbody=document.querySelector("#table tbody");
+
+thead.innerHTML="";
+tbody.innerHTML="";
+
+if(!tableData.length)return;
+
+let completed=0,pending=0,progress=0;
+
+// HEADER
+let header="<tr>";
+tableData[0].forEach(col=>header+=`<th>${col}</th>`);
+header+="</tr>";
+thead.innerHTML=header;
+
+// ROWS
+for(let i=1;i<tableData.length;i++){
+
+let rowData=tableData[i];
+let cellValue=rowData[colIndex] || "";
+
+let rowText=rowData.join(" ").toLowerCase();
+
+// DATE FILTER
+let passDate=true;
+
+rowData.forEach(cell=>{
+let d=new Date(cell);
+if(!isNaN(d)){
+if(fromDate && d<fromDate) passDate=false;
+if(toDate && d>toDate) passDate=false;
+}
+});
+
+if(rowText.includes(search) && passDate){
+
+let row="<tr>";
+
+rowData.forEach(cell=>{
+
+let cls="";
+let val=cell || "";
+
+if(val){
+let v=val.toString().toLowerCase();
+
+if(v.includes("complete")){cls="completed";completed++;}
+else if(v.includes("pending")){cls="pending";pending++;}
+else if(v.includes("progress")){cls="progress";progress++;}
+}
+
+row+=`<td class="${cls}">${val}</td>`;
+});
+
+row+="</tr>";
+tbody.innerHTML+=row;
+}
+}
+
+// SUMMARY
+summary.innerHTML=`
+<div style="background:#007bff;color:white;padding:10px;">Total: ${completed+pending+progress}</div>
+<div style="background:#28a745;color:white;padding:10px;">Completed: ${completed}</div>
+<div style="background:#dc3545;color:white;padding:10px;">Pending: ${pending}</div>
+<div style="background:#ffc107;padding:10px;">Progress: ${progress}</div>
+`;
+
+drawChart(completed,pending,progress);
+}
+
+// DATE HELPERS
+function fromDateInput(){
+let val=document.getElementById("fromDate").value;
+return val?new Date(val):null;
+}
+
+function toDateInput(){
+let val=document.getElementById("toDate").value;
+return val?new Date(val):null;
+}
+
+// CHART
+function drawChart(c,p,pr){
+
+if(chart) chart.destroy();
+
+chart=new Chart(chartBox(),{
+type:'pie',
+data:{
+labels:["Completed","Pending","In Progress"],
+datasets:[{data:[c,p,pr]}]
+}
+});
+}
+
+function chartBox(){
+return document.getElementById("chart");
+}
+
+// AUTO REFRESH
+setInterval(()=>{
+if(tableData.length>0) displayData();
+},10000);
+
 </script>
 
 </body>
