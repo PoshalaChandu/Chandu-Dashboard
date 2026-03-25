@@ -70,9 +70,19 @@
     <div class="header">🚆 NMS Dashboard - Chandu</div>
 
     <div class="controls">
-        <select id="sheetSelect" onchange="displayData()"></select>
-        <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
-    </div>
+
+    <!-- ✅ VISIBLE BUTTON -->
+    <label style="background:#007bff;color:white;padding:8px 12px;border-radius:5px;cursor:pointer;">
+        Upload Excel
+        <input type="file" id="fileInput" multiple accept=".xlsx"
+               onchange="loadMultipleExcel()" style="display:none;">
+    </label>
+
+    <select id="sheetSelect" onchange="displayData()"></select>
+
+    <input type="text" id="search" placeholder="Search..." onkeyup="displayData()">
+
+</div>
 
     <div class="chart-box">
         <canvas id="chart"></canvas>
